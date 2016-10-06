@@ -1,9 +1,9 @@
 log::add('scenario','debug', '------------------------ lancement -------------------------');
 
 // paramètres
-$cPeriode = '0,30'; // intervalle en minute de lancement du scénario. Par exemple pour la valeur 30 il se lance toutes les heures à 30 minutes
-$szNomEquipementChaudiere = $scenario->getData('ChaudiereThermostat'); // nom de l'équipement Thermostat
+// auto programmation, exécution toutes les jours à minuit une pour revoir les flags
 
+$szNomEquipementChaudiere = $scenario->getData('ChaudiereThermostat'); // nom de l'équipement Thermostat
 if($szNomEquipementChaudiere=='') {
   log::add('scenario','warning', 'nom équipement chaudière introuvable, lancement le scenario pour évaluation des variables avant svp');
 	$scList = $scenario->byObjectNameGroupNameScenarioName('Aucun','Chauffage','ChauffageEvalVariables');
@@ -57,8 +57,8 @@ foreach(explode('/', $prgFeries) as $a) { $scenario->setLog('prog fer: '.json_en
 $bEstFerie = $scenario->getData('ChaudiereFerie');
 $bPeriodeChauffe = $scenario->getData('ChaudierePeriodeChauffe');
 $bWeekEnd = $scenario->getData('ChaudiereWeekEnd');
-$cFinChauffe = $scenario->getData('FinChauffe');
-$cDebutChauffe = $scenario->getData('DebutChauffe');
+$cFinChauffe = $scenario->getData('ChaudiereFinChauffe');
+$cDebutChauffe = $scenario->getData('ChaudiereDebutChauffe');
 // Est-elle Vérouillée ? si oui on sort pour éviter de changer le mode
 log::add('scenario','DEBUG', 'lecture vérouillage chaudière '.'#'.$szNomEquipementChaudiere . '[Verrou]#');
 $cmd = cmd::byString('#'.$szNomEquipementChaudiere . '[Verrouillage]#');
@@ -90,12 +90,13 @@ if ($szEtatChaudiere == true) { //vérouillée en température de consigne ?
         // on est dans la période où l'on chauffe plus donc pas de programmation
         log::add('scenario','debug', 'On est hors période de chauffe, programmation ignorée');
         // changement de la programmation pour retour à période de chauffe
-        $scenario->setSchedule('00 00 '.str_replace('/', ' ',$cDebutChauffe).' *');
+        $scenario->setMode("schedule"); $scenario->setSchedule('00 00 '.str_replace('/', ' ',$cDebutChauffe).' *');
         $scenario->setIsActive(1); $scenario->save();
         log::add('scenario','debug', 'reprogrammation temporisateur à partir du début de chauffe ('.$cDebutChauffe.')');
     } else { // on est en période de chauffe
         // remettre le timer sur le défaut
-        $scenario->setSchedule($cPeriode.' * * * *');
+		$scenario->setMode("schedule");
+        $scenario->setSchedule(array('0 * * * *', '30 * * * * '));
         $scenario->save();
 
         if ($bWeekEnd==1) { // on est en week-end, le week-end a l'antériorité sur les jours fériés
