@@ -178,3 +178,21 @@ if ($szMode == '') // aucun mode programmé, on met une valeur par défaut à Ec
 $szMode = $scenario->getData('ChaudiereEntreeNormal');
 if ($szMode == '') // aucun mode programmé, on met une valeur par défaut à Confort
   $scenario->setData('ChaudiereRetourNormal', 'Confort');
+
+// auto programmation, exécution toutes les jours à minuit une pour revoir les flags
+$scenario->setMode("schedule");
+$scenario->setSchedule('1 0 * * *');
+$scenario->save();
+
+// programme maintenant le déclenchement du programmateur correctement, ce dernier en dehors des période de chauffe se désactivera à la première itération
+$scList = $scenario->byObjectNameGroupNameScenarioName('Aucun','Chauffage','ChauffageProgrammation');
+if ($scList ==NULL) {
+  log::add('scenario','debug','scenario non trouvé, arrêt'); $scenario->stop();
+}	 else
+{
+  log::add('scenario','debug','scenario évaluation des variables déclenché'); 
+  $scList->setMode("schedule");
+  $scList->setSchedule(array('0 * * * *','30 * * * *'));
+  $scList->save();
+}
+
