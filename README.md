@@ -8,7 +8,7 @@ Positionnez les script dans un groupe appelé <b>Chauffage</b>
 Lancez le script <b>ChauffageEvalVariables</b> et cliquez sur <b>Voir Variables</b> pour vérifiez que les variables par défaut se sont bien créées dans la liste des variables globale de l'écran listant les scénarii. Si tout est correct vous devez avoir plusieurs variables avec le préfixe <b>Chaudière</b> disponibles : 
 
 <table>
-<th><td>Variable</td><td>Contenu</td><td>Commentaire</td></th>
+<tr><th>Variable</th><th>Contenu</th><th>Commentaire</th></tr>
 <tr><td>ChaudiereThermostat</td><td>Nom complet d'objet Thermostat détecté par le script</td><td>Evalué automatiquement</td></tr>
 <tr><td>ChaudiereDebutChauffe</td><td>Date de début de période de chauffe au format JJ/MM</td><td>peut être changé manuellement</td></tr>
 <tr><td>ChaudiereFinChauffe</td><td>Date de fin de période de chauffe au format JJ/MM</td><td>peut être changé manuellement</td></tr>
