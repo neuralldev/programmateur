@@ -1,0 +1,64 @@
+log::add('scenario','DEBUG', '----------------------- chaudiere : retour de congés ------------------------------');
+$szNomEquipementChaudiere = $scenario->getData('ChaudiereThermostat'); // nom de l'équipement Thermostat
+if($szNomEquipementChaudiere=='') {
+  log::add('scenario','warning', 'nom équipement chaudière introuvable, lancement le scenario pour évaluation des variables avant svp');
+	$scList = $scenario->byObjectNameGroupNameScenarioName('Aucun','Chauffage','ChauffageEvalVariables');
+	if ($scList ==NULL) {
+      log::add('scenario','debug','scenario non trouvé, arrêt'); $scenario->stop();
+	}	 else
+	{
+      log::add('scenario','debug','scenario évaluation des variables déclenché'); 
+      $scList->execute('','lancement par '.$scenario->getName());
+      $scenario->stop();
+	}
+}
+
+// récupère le mode de commutation 
+$szMode = $scenario->getData('ChaudiereRetourVacances'); // mode de commutation retour vacances
+if($szMode=='') {
+  log::add('scenario','warning', 'mode de commutation départ vacances non trouvé, lancement le scenario pour évaluation des variables avant svp');
+	$scList = $scenario->byObjectNameGroupNameScenarioName('Aucun','Chauffage','ChauffageEvalVariables');
+	if ($scList ==NULL) {
+      log::add('scenario','debug','scenario non trouvé, arrêt'); $scenario->stop();
+	}	 else
+	{
+      log::add('scenario','debug','scenario évaluation des variables déclenché'); 
+      $scList->execute('','lancement par '.$scenario->getName());
+      $scenario->stop();
+	}
+}
+
+// on est en retour de vacances, il faut réactiver la programmation 
+$scProgramme = $scenario->byObjectNameGroupNameScenarioName('Aucun','Chauffage','ChauffageProgrammation');
+if ($scProgramme ==NULL) {
+  log::add('scenario','debug','scenario de programmation non trouvé, arrêt'); $scenario->stop();
+}	 else
+{
+  if ($scProgramme->getIsActive()==0) {
+    log::add('scenario','debug','activation du programmateur'); 
+  	$scProgramme->setIsActive(1); $scProgramme->save();
+  }
+}
+
+log::add('scenario','DEBUG', 'lecture mode chaudière '.'#'.$szNomEquipementChaudiere . '[Mode]#');
+$cmd = cmd::byString('#'.$szNomEquipementChaudiere . '[Mode]#');
+$szModeChaudiere = $cmd->execCmd();
+log::add('scenario','DEBUG', 'lecture mode chaudière retour=' . $szModeChaudiere);
+if  ($szModeChaudiere =='Off')
+	log::add('scenario','DEBUG', 'chaudière arrêtée manuellement, on ignore la reprogrammation');
+else {
+	$bPeriodeChauffe = $scenario->getData('ChaudierePeriodeChauffe');
+	if ($bPeriodeChauffe =='')
+		log::add('scenario','DEBUG', 'période de chauffe non calculée, lanez évaluation des variables svp');
+    else
+	if ($bPeriodeChauffe ==0)
+		log::add('scenario','DEBUG', 'En dehors des périodes de chauffe, on ignore la reprogrammation');
+	else {
+  		// par défaut on remet le mode confort pour une meilleure montée en température avant l'arrivée
+  		$szCommuterVers = $szMode;
+		log::add('scenario','DEBUG', 'En période de chauffe, on change le mode vers '.$szCommuterVers);
+  		$cmd = cmd::byString('#'.$szNomEquipementChaudiere . '['.$szCommuterVers.']#');
+  		$cmd->execCmd($szCommuterVers);
+  		log::add('scenario','debug', 'commutation en mode ' . $szCommuterVers.' envoyée');
+	}
+}
