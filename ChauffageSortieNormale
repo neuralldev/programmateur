@@ -14,9 +14,9 @@ if($szNomEquipementChaudiere=='') {
 }
 
 // récupère le mode de commutation 
-$szMode = $scenario->getData('ChaudiereSortieNormale'); // mode de commutation départ vacances
+$szMode = $scenario->getData('ChaudiereSortieNormale'); // mode de commutation sortie normale
 if($szMode=='') {
-  log::add('scenario','warning', 'mode de commutation départ vacances non trouvé, lancement le scenario pour évaluation des variables avant svp');
+  log::add('scenario','warning', 'mode de commutation sortie normale non trouvé, lancement le scenario pour évaluation des variables avant svp');
 	$scList = $scenario->byObjectNameGroupNameScenarioName('Aucun','Chauffage','ChauffageEvalVariables');
 	if ($scList ==NULL) {
       log::add('scenario','debug','scenario non trouvé, arrêt'); $scenario->stop();
@@ -26,18 +26,6 @@ if($szMode=='') {
       $scList->execute('','lancement par '.$scenario->getName());
       $scenario->stop();
 	}
-}
-
-// on est en sortie normale, il faut réactiver la programmation 
-$scProgramme = $scenario->byObjectNameGroupNameScenarioName('Aucun','Chauffage','ChauffageProgrammation');
-if ($scProgramme ==NULL) {
-  log::add('scenario','debug','scenario de programmation non trouvé, arrêt'); $scenario->stop();
-}	 else
-{
-  if ($scProgramme->getIsActive()==0) {
-    log::add('scenario','debug','activation du programmateur'); 
-  	$scProgramme->setIsActive(1); $scProgramme->save();
-  }
 }
 
 log::add('scenario','DEBUG', 'lecture mode chaudière '.'#'.$szNomEquipementChaudiere . '[Mode]#');
@@ -60,5 +48,20 @@ else {
   		$cmd = cmd::byString('#'.$szNomEquipementChaudiere . '['.$szCommuterVers.']#');
   		$cmd->execCmd($szCommuterVers);
   		log::add('scenario','debug', 'commutation en mode ' . $szCommuterVers.' envoyée');
+        // une fois la commutation effectuée, il faut bloquer la consigne pour éviter un retour à la valeur normale
+  		$cmd = cmd::byString('#'.$szNomEquipementChaudiere . '[lock]#');
+  		$cmd->execCmd();
 	}
+}
+
+// on est en sortie normale, il faut avant de sortir réactiver la programmation 
+$scProgramme = $scenario->byObjectNameGroupNameScenarioName('Aucun','Chauffage','ChauffageProgrammation');
+if ($scProgramme ==NULL) {
+  log::add('scenario','debug','scenario de programmation non trouvé, arrêt'); $scenario->stop();
+}	 else
+{
+  if ($scProgramme->getIsActive()==0) {
+    log::add('scenario','debug','activation du programmateur'); 
+  	$scProgramme->setIsActive(1); $scProgramme->save();
+  }
 }
