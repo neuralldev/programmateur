@@ -175,9 +175,9 @@ if ($szMode == '') // aucun mode programmé, on met une valeur par défaut à Co
 $szMode = $scenario->getData('ChaudiereSortieNormale');
 if ($szMode == '') // aucun mode programmé, on met une valeur par défaut à Eco
   $scenario->setData('ChaudiereSortieNormale', 'Eco');
-$szMode = $scenario->getData('ChaudiereEntreeNormal');
+$szMode = $scenario->getData('ChaudiereEntreeNormale');
 if ($szMode == '') // aucun mode programmé, on met une valeur par défaut à Confort
-  $scenario->setData('ChaudiereRetourNormal', 'Confort');
+  $scenario->setData('ChaudiereEntreeNormale', 'Confort');
 
 // auto programmation, exécution toutes les jours à minuit une pour revoir les flags
 $scenario->setMode("schedule");
