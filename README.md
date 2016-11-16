@@ -27,3 +27,4 @@ Une fois ce script enclenché, les autres sont à programmer selon les modes. Si
 
 Cochez la case <b>Pas de log</b> une fois les vérification effectué pour limiter la verbosité et accélérer les traitements.
 
+ 
