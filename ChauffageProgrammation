@@ -1,17 +1,17 @@
-log::add('scenario','debug', '------------------------ lancement -------------------------');
+$scenario->setLog( '------------------------ lancement -------------------------');
 
 // paramètres
 // auto programmation, exécution toutes les jours à minuit une pour revoir les flags
 
 $szNomEquipementChaudiere = $scenario->getData('ChaudiereThermostat'); // nom de l'équipement Thermostat
 if($szNomEquipementChaudiere=='') {
-  log::add('scenario','warning', 'nom équipement chaudière introuvable, lancement le scenario pour évaluation des variables avant svp');
+  $scenario->setLog('nom équipement chaudière introuvable, lancement le scenario pour évaluation des variables avant svp');
 	$scList = $scenario->byObjectNameGroupNameScenarioName('Aucun','Chauffage','ChauffageEvalVariables');
 	if ($scList ==NULL) {
-      log::add('scenario','debug','scenario non trouvé, arrêt'); $scenario->stop();
+      $scenario->setLog('scenario non trouvé, arrêt'); $scenario->stop();
 	}	 else
 	{
-      log::add('scenario','debug','scenario évaluation des variables déclenché'); 
+      $scenario->setLog('scenario évaluation des variables déclenché'); 
       $scList->execute('','lancement par '.$scenario->getName());
       $scenario->stop();
 	}
@@ -23,13 +23,13 @@ $prgWeekEnd = $scenario->getData('ChaudiereProgrammeWeekEnd');
 $prgFeries = $scenario->getData('ChaudiereProgrammeFeries');
 
 if($prgStandard=='' || $prgWeekEnd=='' || $prgFeries=='') {
-  log::add('scenario','warning', 'programmation non définie, lancement le scenario pour évaluation des variables avant svp');
+  $scenario->setLog('programmation non définie, lancement le scenario pour évaluation des variables avant svp');
 	$scList = $scenario->byObjectNameGroupNameScenarioName('Aucun','Chauffage','ChauffageEvalVariables');
 	if ($scList ==NULL) {
-      log::add('scenario','debug','scenario non trouvé, arrêt'); $scenario->stop();
+      $scenario->setLog('scenario non trouvé, arrêt'); $scenario->stop();
 	}	 else
 	{
-      log::add('scenario','debug','scenario évaluation des variables déclenché'); 
+      $scenario->setLog('scenario évaluation des variables déclenché'); 
       $scList->execute('','lancement par '.$scenario->getName());
       $scenario->stop();
 	}
@@ -46,6 +46,7 @@ $aKeys =array('heure','mode');
 $dProgrammeStandard = array();
 $dProgrammeWeekEnd = array();
 $dProgrammeFeries = array();
+$dProg = array();
 
 foreach(explode('/', $prgStandard) as $a){ $scenario->setLog('prog std: '.json_encode($a, true));
   array_push($dProgrammeStandard,  array_combine($aKeys,explode(',', $a))); }
@@ -60,13 +61,13 @@ $bWeekEnd = $scenario->getData('ChaudiereWeekEnd');
 $cFinChauffe = $scenario->getData('ChaudiereFinChauffe');
 $cDebutChauffe = $scenario->getData('ChaudiereDebutChauffe');
 // Est-elle Vérouillée ? si oui on sort pour éviter de changer le mode
-log::add('scenario','DEBUG', 'lecture vérouillage chaudière '.'#'.$szNomEquipementChaudiere . '[Verrou]#');
+$scenario->setLog( 'lecture vérouillage chaudière '.'#'.$szNomEquipementChaudiere . '[Verrou]#');
 $cmd = cmd::byString('#'.$szNomEquipementChaudiere . '[Verrouillage]#');
 $szEtatChaudiere = $cmd->execCmd();
-log::add('scenario','DEBUG', 'lecture vérouillage chaudière retour=' . ($szEtatChaudiere ? 'vérouillée' : 'dévérouilée'));
+$scenario->setLog( 'lecture vérouillage chaudière retour=' . ($szEtatChaudiere ? 'vérouillée' : 'dévérouilée'));
 
 if ($szEtatChaudiere == true) { //vérouillée en température de consigne ?
-    log::add('scenario','debug', 'chaudière vérouillée, la programmation est ignorée');
+    $scenario->setLog( 'chaudière vérouillée, la programmation est ignorée');
 } else {
     // lecture de la date et de l'heure actuelle
     $dDateActuelle = new DateTime('now');
@@ -74,25 +75,31 @@ if ($szEtatChaudiere == true) { //vérouillée en température de consigne ?
 
     $cmd = cmd::byString('#'.$szNomEquipementChaudiere . '[Mode]#');
     $szModeChaudiere = $cmd->execCmd();
-    log::add('scenario','debug', 'lecture du mode mode='.$szModeChaudiere);
+    $scenario->setLog( 'lecture du mode mode='.$szModeChaudiere);
     if ($szModeChaudiere == "Off") {
         // La chaudière est arrêtée manuellement, on doit désactiver la programmation
-        log::add('scenario','debug', 'On est dans le mode Off, on saute la programmation');
+        $scenario->setLog( 'On est dans le mode Off, on saute la programmation');
         // désactivation du scénario
 //        $scenario->setIsActive(0); $scenario->save();
     } else
     if ($szModeChaudiere == "Hors Gel") {
         // La chaudière est en hors gel jusqu'à passage manuellement sur un mode quelconque
-        log::add('scenario','debug', 'On est dans le mode hors gel (vacances), on saute la programmation');
+        $scenario->setLog( 'On est dans le mode hors gel (vacances), on saute la programmation');
+      // remise à zéro des valeurs du prochain cycle
+      $scenario->setData('ChaudiereProchainCycleHeure', '');
+      $scenario->setData('ChaudiereProchainCycleMode', '');
     } else
     // dans la période de non chauffe on sort direct
     if ($bPeriodeChauffe==0) {
         // on est dans la période où l'on chauffe plus donc pas de programmation
-        log::add('scenario','debug', 'On est hors période de chauffe, programmation ignorée');
+        $scenario->setLog( 'On est hors période de chauffe, programmation ignorée');
         // changement de la programmation pour retour à période de chauffe
         $scenario->setMode("schedule"); $scenario->setSchedule('00 00 '.str_replace('/', ' ',$cDebutChauffe).' *');
         $scenario->setIsActive(1); $scenario->save();
-        log::add('scenario','debug', 'reprogrammation temporisateur à partir du début de chauffe ('.$cDebutChauffe.')');
+        $scenario->setLog( 'reprogrammation temporisateur à partir du début de chauffe ('.$cDebutChauffe.')');
+      // remise à zéro des valeurs du prochain cycle
+      $scenario->setData('ChaudiereProchainCycleHeure', '');
+      $scenario->setData('ChaudiereProchainCycleMode', '');
     } else { // on est en période de chauffe
         // remettre le timer sur le défaut
 		$scenario->setMode("schedule");
@@ -100,73 +107,50 @@ if ($szEtatChaudiere == true) { //vérouillée en température de consigne ?
         $scenario->save();
 
         if ($bWeekEnd==1) { // on est en week-end, le week-end a l'antériorité sur les jours fériés
-            log::add('scenario','DEBUG', 'on est en weekend');
-            $szCommuterVers = '';
-            foreach (array_reverse($dProgrammeWeekEnd) as $szHeure) {
-                $dIntervalle = new DateTime(date('Y-m-d') . ' ' . $szHeure['heure']);
-                log::add('scenario','debug', 'lecture intervalle heure=' . $szHeure['heure']);
-                if ($dDateActuelle >= $dIntervalle) { // à la première heure qui va, on sort de la boucle
-                    $szCommuterVers = $szHeure['mode'];
-                    log::add('scenario','debug', 'heure trouvé qui correspond =' . $szHeure['heure']);
-                    break;
-                }
-            }
-            log::add('scenario','debug', 'test de la commutation en mode {' . $szCommuterVers . '}');
-            if ($szCommuterVers != '' && $szCommuterVers != $szModeChaudiere) {
-                // on a trouvé une commutation et on doit changer de mode
-                log::add('scenario','info', 'commutation en mode ' . $szCommuterVers);
-                $cmd = cmd::byString('#'.$szNomEquipementChaudiere . '['.$szCommuterVers.']#');
-                $cmd->execCmd($szCommuterVers);
-                log::add('scenario','debug', 'commutation en mode ' . $szCommuterVers.' envoyée');
-            } else
-                log::add('scenario','debug', 'conditons de commutation non remplie {' . $szCommuterVers . '}');
-        } else
-        // en cas de jour férié,
-        if ($bEstFerie==0) {
+            $scenario->setLog( 'on est en weekend');
+			$dProg = $dProgrammeWeekEnd;
+		} 
+		if ($bEstFerie==0) {
             // on est pas un jour férié, si des traitements sont à faire c'est ici
-            log::add('scenario','DEBUG', 'on est en jour normal');
-            $szCommuterVers = '';
-            foreach (array_reverse($dProgrammeStandard) as $szHeure) {
-                $dIntervalle = new DateTime(date('Y-m-d') . ' ' . $szHeure['heure']);
-                log::add('scenario','debug', 'lecture intervalle heure = ' . $szHeure['heure']);
-                if ($dDateActuelle >= $dIntervalle) { // à la première heure qui va, on sort de la boucle
-                    $szCommuterVers = $szHeure['mode'];
-                    log::add('scenario','debug', 'heure trouvé qui correspond = ' . $szHeure['heure']);
-                    break;
-                }
-            }
-            log::add('scenario','debug', 'test de la commutation en mode {' . $szCommuterVers . '}');
-            if ($szCommuterVers != '' && $szCommuterVers != $szModeChaudiere) {
-                // on a trouvé une commutation et on doit changer de mode
-                log::add('scenario','info', 'commutation en mode ' . $szCommuterVers);
-                $cmd = cmd::byString('#'.$szNomEquipementChaudiere . '['.$szCommuterVers.']#');
-                $cmd->execCmd($szCommuterVers);
-                log::add('scenario','debug', 'commutation en mode ' . $szCommuterVers.' envoyée');
-            } else
-                log::add('scenario','debug', 'conditons de commutation non remplie {' . $szCommuterVers . '}');
-        } // fin de période standard
-        else { // jour férié
-            log::add('scenario','DEBUG', 'on est en jour férié');
-            $szCommuterVers = '';
-            foreach (array_reverse($dProgrammeFeries) as $szHeure) {
-                $dIntervalle = new DateTime(date('Y-m-d') . ' ' . $szHeure['heure']);
-                log::add('scenario','debug', 'lecture intervalle heure=' . $szHeure['heure']);
-                if ($dDateActuelle >= $dIntervalle) { // à la première heure qui va, on sort de la boucle
-                    $szCommuterVers = $szHeure['mode'];
-                    log::add('scenario','debug', 'heure trouvé qui correspond =' . $szHeure['heure']);
-                    break;
-                }
-            }
-            log::add('scenario','debug', 'test de la commutation en mode {' . $szCommuterVers . '}');
-            if ($szCommuterVers != '' && $szCommuterVers != $szModeChaudiere) {
-                // on a trouvé une commutation et on doit changer de mode
-                log::add('scenario','info', 'commutation en mode ' . $szCommuterVers);
-                $cmd = cmd::byString('#'.$szNomEquipementChaudiere . '['.$szCommuterVers.']#');
-                $cmd->execCmd($szCommuterVers);
-                log::add('scenario','debug', 'commutation en mode ' . $szCommuterVers.' envoyée');
-            } else
-                log::add('scenario','debug', 'conditons de commutation non remplie {' . $szCommuterVers . '}');
-        }
+            $scenario->setLog( 'on est en jour normal');
+			$dProg = $dProgrammeStandard;
+		}   else { // jour férié
+            $scenario->setLog( 'on est en jour férié');
+			$dProg = $dProgrammeFeries;
+		};
+		$szCommuterVers = '';
+		foreach (array_reverse($dProg) as $szHeure) {
+			$dIntervalle = new DateTime(date('Y-m-d') . ' ' . $szHeure['heure']);
+			$scenario->setLog( 'lecture intervalle heure=' . $szHeure['heure']);
+			if ($dDateActuelle >= $dIntervalle) { // à la première heure qui va, on sort de la boucle
+				$szCommuterVers = $szHeure['mode'];
+				$scenario->setLog( 'heure trouvé qui correspond =' . $szHeure['heure']);
+				break;
+			}
+		}
+		$scenario->setLog( 'test de la commutation en mode {' . $szCommuterVers . '}');
+		if ($szCommuterVers != '' && $szCommuterVers != $szModeChaudiere) {
+			// on a trouvé une commutation et on doit changer de mode
+			$scenario->setLog( 'commutation en mode ' . $szCommuterVers);
+			$cmd = cmd::byString('#'.$szNomEquipementChaudiere . '['.$szCommuterVers.']#');
+			$cmd->execCmd($szCommuterVers);
+			$scenario->setLog( 'commutation en mode ' . $szCommuterVers.' envoyée');
+		} else
+			$scenario->setLog( 'conditons de commutation non remplie {' . $szCommuterVers . '}');
+       // calcule maintenant le prochain cycle pour afficher par anticipation
+       $szCommuterVers = '';
+       foreach ($dProg as $szHeure) {
+			$dIntervalle = new DateTime(date('Y-m-d') . ' ' . $szHeure['heure']);
+			$scenario->setLog( 'lecture intervalle heure=' . $szHeure['heure']);
+			if ($dDateActuelle < $dIntervalle) { // à la première heure qui va, on sort de la boucle
+				$szCommuterVers = $szHeure['mode'].' à '.$szHeure['heure'];
+				break;
+			}
+		}
+      if ($szCommuterVers=="") $szHeure = $dProg[0];
+      $scenario->setLog( 'prochain cycle à ' . $szHeure['heure'].' en mode '.$szHeure['mode']);
+      $scenario->setData('ChaudiereProchainCycleHeure', $szHeure['heure']);
+      $scenario->setData('ChaudiereProchainCycleMode', $szHeure['mode']);
     }
     // calendrier
     // jours fériés
