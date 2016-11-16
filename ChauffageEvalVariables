@@ -1,4 +1,4 @@
-log::add('scenario', 'debug', 'demarrage');
+$scenario->setLog( 'demarrage');
 // récupère le nom d'équipement du thermostat, s'il y en a plusieurs, travaille sur le premier
 // il est possible de mettre le nom à la main également s'il y en a plusieurs
 $szThermostatName=$scenario->getData('ChaudiereThermostat');
@@ -6,13 +6,13 @@ if ($szThermostatName=='') {
   // liste les équipements de la catégorie heating
   $eql = eqLogic::byCategorie('heating');
   foreach ($eql as $e) {
-    log::add('scenario','debug', 'record found');
+    $scenario->setLog( 'record found');
     $i = $e->getId();
     $n = $e->getEqType_name();
     $c = $e->getConfiguration();
     if (($n=='thermostat') && array_key_exists('heating',$c) && array_key_exists('coeff_indoor_heat',$c) ) {
       $szThermostatName = $e->getHumanName();
-      log::add('scenario','debug', $szThermostatName.' '.'info id='.$i.' type='.$n);  
+      $scenario->setLog( $szThermostatName.' '.'info id='.$i.' type='.$n);  
       $scenario->setData('ChaudiereThermostat', $szThermostatName);
       break;
     }
@@ -21,10 +21,10 @@ if ($szThermostatName=='') {
   if ($szThermostatName=='') { 
     // un nom de thermostat est obligatoire pour le fonctionnement, si on le trouve pas il faut arrêter
     $scenario->Stop();
-    log::add('scenario','error', 'aucun thermostat trouvé, la programmation ne peut être lancée !');    
+    $scenario->setLog('aucun thermostat trouvé, la programmation ne peut être lancée !');    
   }
 }
-log::add('scenario','debug', 'thermostat utilisé '.$szThermostatName);    
+$scenario->setLog( 'thermostat utilisé '.$szThermostatName);    
 
 // évaluation de la période de chauffe annuelle 
 $CDEBUT = '15/10'; // début de chauffe par défaut
@@ -35,36 +35,36 @@ $iAn = date('Y');
 $s = $scenario->getData('ChaudiereDebutChauffe');
 if ($s=="") {
   $s = $CDEBUT;
-  log::add('scenario', 'debug', 'création des constantes de chauffe, début de période='.$s);
+  $scenario->setLog( 'création des constantes de chauffe, début de période='.$s);
   $scenario->setData('ChaudiereDebutChauffe', $CDEBUT); $scenario->save();
 }
 $s = $s.'/'.$iAn;
-log::add('scenario', 'debug', 'début de période ='.$s);
+$scenario->setLog( 'début de période ='.$s);
 $debutChauffe = DateTime::createFromFormat('d/m/Y', $s);
 //$debutChauffe->setTime(0, 0, 0);
-  log::add('scenario', 'debug', 'debut='.$debutChauffe->format('Y-m-d'));
+  $scenario->setLog( 'debut='.$debutChauffe->format('Y-m-d'));
 
 $s = $scenario->getData('ChaudiereFinChauffe');
-log::add('scenario', 'debug', 'fin de période ='.$s);
+$scenario->setLog( 'fin de période ='.$s);
 if ($s=="") {
   $scenario->setData('ChaudiereFinChauffe', $CFIN); $scenario->save();
   $s = $CFIN;
-  log::add('scenario', 'debug', 'création des constantes de chauffe, fin de période='.$s);
+  $scenario->setLog( 'création des constantes de chauffe, fin de période='.$s);
 }
 $s =$s.'/'.$iAn;
 $finChauffe = DateTime::createFromFormat('d/m/Y', $s);
 //$finChauffe->setTime(0, 0, 0);
-  log::add('scenario', 'debug', 'fin='.$finChauffe->format('Y-m-d'));
+  $scenario->setLog( 'fin='.$finChauffe->format('Y-m-d'));
 //$finChauffe = date_create($t);
 
 $dActuelle = new DateTime('now');
 //$dActuelle = DateTime::createFromFormat('d/m/Y', '01/05/2016');
- log::add('scenario', 'debug', 'date actuelle = '.$dActuelle->format('Y-m-d'));
+ $scenario->setLog( 'date actuelle = '.$dActuelle->format('Y-m-d'));
 
 if (($dActuelle >= $debutChauffe) || ($dActuelle <=$finChauffe))
-  log::add('scenario', 'debug', 'en période de chauffe');
+  $scenario->setLog( 'en période de chauffe');
 else
-  log::add('scenario', 'debug', 'en période d\'été');
+  $scenario->setLog( 'en période d\'été');
 
 // 1 = en chauffe, 0=hors chauffe
 $scenario->setData('ChaudierePeriodeChauffe',(($dActuelle >= $debutChauffe) || ($dActuelle <=$finChauffe))? 1 : 0);
@@ -100,18 +100,18 @@ for ($i = 0; $i < count($holidays); $i++)
 	$holidays[$i] = date('d/m/Y', $holidays[$i]);
 $b = array_search($dActuelle->format('d/m/Y'), $holidays, true);
 if ($b == FALSE)
-  log::add('scenario', 'debug', 'pas férié');
+  $scenario->setLog( 'pas férié');
 else
-  log::add('scenario', 'debug', 'férié clé='.$b);
+  $scenario->setLog( 'férié clé='.$b);
 
 // 1 = férié, 0 = pas férié
 $scenario->setData('ChaudiereFerie',(($b==FALSE)? 0 : 1));
 
 $b = (date('w') == 6) || (date('w')==0);
 if ($b == FALSE)
-  log::add('scenario', 'debug', 'en semaine');
+  $scenario->setLog( 'en semaine');
 else
-  log::add('scenario', 'debug', 'en week end');
+  $scenario->setLog( 'en week end');
 
 // 1 = week-end, 0 = semaine
 $scenario->setData('ChaudiereWeekEnd',(($b==FALSE)? 0 : 1));
@@ -187,10 +187,10 @@ $scenario->save();
 // programme maintenant le déclenchement du programmateur correctement, ce dernier en dehors des période de chauffe se désactivera à la première itération
 $scList = $scenario->byObjectNameGroupNameScenarioName('Aucun','Chauffage','ChauffageProgrammation');
 if ($scList ==NULL) {
-  log::add('scenario','debug','scenario non trouvé, arrêt'); $scenario->stop();
+  $scenario->setLog('scenario non trouvé, arrêt'); $scenario->stop();
 }	 else
 {
-  log::add('scenario','debug','scenario évaluation des variables déclenché'); 
+  $scenario->setLog('scenario évaluation des variables déclenché'); 
   $scList->setMode("schedule");
   $scList->setSchedule(array('0 * * * *','30 * * * *'));
   $scList->save();
