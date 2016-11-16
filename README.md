@@ -22,6 +22,8 @@ Lancez le script <b>ChauffageEvalVariables</b> et cliquez sur <b>Voir Variables<
 <tr><td>ChaudiereRetourVacances</td><td>Mode à commuter en retour de Vacances</td><td>peut être changé manuellement</td></tr>
 <tr><td>ChaudiereSortieNormale</td><td>Mode à commuter en sortie normale (mode absent)</td><td>peut être changé manuellement</td></tr>
 <tr><td>ChaudiereRetourNormal</td><td>Mode à commuter en retour à l'état Présent (mode présent)</td><td>peut être changé manuellement</td></tr>
+<tr><td>ChaudiereProchainCycleHeure</td><td>Heure de déclenchement du prochain cycle de chauffage</td><td>calculé, ne peut être changé</td></tr>
+<tr><td>ChaudiereProchainCycleMode</td><td>Mode déclenché au prochain cycle de chauffage</td><td>calculé, ne peut être changé</td></tr>
 
 Une fois ce script enclenché, les autres sont à programmer selon les modes. Si l'objet Thermostat n'est pas détecté, les scripts ne peuvent pas fonctionner correctement. 
 
