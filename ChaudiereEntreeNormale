@@ -1,13 +1,13 @@
-log::add('scenario','DEBUG', '----------------------- chaudiere : entrée pendant les périodes normales  ------------------------------');
+$scenario->setLog( '----------------------- chaudiere : entrée pendant les périodes normales  ------------------------------');
 $szNomEquipementChaudiere = $scenario->getData('ChaudiereThermostat'); // nom de l'équipement Thermostat
 if($szNomEquipementChaudiere=='') {
-  log::add('scenario','warning', 'nom équipement chaudière introuvable, lancement le scenario pour évaluation des variables avant svp');
+  $scenario->setLog('nom équipement chaudière introuvable, lancement le scenario pour évaluation des variables avant svp');
 	$scList = $scenario->byObjectNameGroupNameScenarioName('Aucun','Chauffage','ChauffageEvalVariables');
 	if ($scList ==NULL) {
-      log::add('scenario','debug','scenario non trouvé, arrêt'); $scenario->stop();
+      $scenario->setLog('scenario non trouvé, arrêt'); $scenario->stop();
 	}	 else
 	{
-      log::add('scenario','debug','scenario évaluation des variables déclenché'); 
+      $scenario->setLog('scenario évaluation des variables déclenché'); 
       $scList->execute('','lancement par '.$scenario->getName());
       $scenario->stop();
 	}
@@ -16,52 +16,52 @@ if($szNomEquipementChaudiere=='') {
 // récupère le mode de commutation 
 $szMode = $scenario->getData('ChaudiereEntreeNormale'); // mode de commutation entrée normale
 if($szMode=='') {
-  log::add('scenario','warning', 'mode de commutation entrée normale non trouvé, lancement le scenario pour évaluation des variables avant svp');
+  $scenario->setLog('mode de commutation entrée normale non trouvé, lancement le scenario pour évaluation des variables avant svp');
 	$scList = $scenario->byObjectNameGroupNameScenarioName('Aucun','Chauffage','ChauffageEvalVariables');
 	if ($scList ==NULL) {
-      log::add('scenario','debug','scenario non trouvé, arrêt'); $scenario->stop();
+      $scenario->setLog('scenario non trouvé, arrêt'); $scenario->stop();
 	}	 else
 	{
-      log::add('scenario','debug','scenario évaluation des variables déclenché'); 
+      $scenario->setLog('scenario évaluation des variables déclenché'); 
       $scList->execute('','lancement par '.$scenario->getName());
       $scenario->stop();
 	}
 }
 
-log::add('scenario','DEBUG', 'lecture mode chaudière '.'#'.$szNomEquipementChaudiere . '[Mode]#');
+$scenario->setLog( 'lecture mode chaudière '.'#'.$szNomEquipementChaudiere . '[Mode]#');
 $cmd = cmd::byString('#'.$szNomEquipementChaudiere . '[Mode]#');
 $szModeChaudiere = $cmd->execCmd();
-log::add('scenario','DEBUG', 'lecture mode chaudière retour=' . $szModeChaudiere);
+$scenario->setLog( 'lecture mode chaudière retour=' . $szModeChaudiere);
 if  ($szModeChaudiere =='Off')
-	log::add('scenario','DEBUG', 'chaudière arrêtée manuellement, on ignore la reprogrammation');
+	$scenario->setLog( 'chaudière arrêtée manuellement, on ignore la reprogrammation');
 else {
 	$bPeriodeChauffe = $scenario->getData('ChaudierePeriodeChauffe');
 	if ($bPeriodeChauffe =='')
-		log::add('scenario','DEBUG', 'période de chauffe non calculée, lancez évaluation des variables svp');
+		$scenario->setLog( 'période de chauffe non calculée, lancez évaluation des variables svp');
     else
 	if ($bPeriodeChauffe ==0) 
-		log::add('scenario','DEBUG', 'En dehors des périodes de chauffe, on ignore la reprogrammation');
+		$scenario->setLog( 'En dehors des périodes de chauffe, on ignore la reprogrammation');
 	else {
         // on commence par dévérouiller le thermostat s'il l'est
   		$cmd = cmd::byString('#'.$szNomEquipementChaudiere . '[unlock]#');
   		$cmd->execCmd();
         // par défaut on réactive le mode correspondant à l'horaire
       	$szCommuterVers = $szMode;
-		log::add('scenario','DEBUG', 'En période de chauffe, on change le mode vers '.$szCommuterVers);
+		$scenario->setLog( 'En période de chauffe, on change le mode vers '.$szCommuterVers);
   		$cmd = cmd::byString('#'.$szNomEquipementChaudiere . '['.$szCommuterVers.']#');
   		$cmd->execCmd($szCommuterVers);
-  		log::add('scenario','debug', 'commutation en mode ' . $szCommuterVers.' envoyée');
+  		$scenario->setLog( 'commutation en mode ' . $szCommuterVers.' envoyée');
 	}
 }
 
 // on est en entrée normale, il faut réactiver la programmation 
 $scProgramme = $scenario->byObjectNameGroupNameScenarioName('Aucun','Chauffage','ChauffageProgrammation');
 if ($scProgramme ==NULL) {
-  log::add('scenario','debug','scenario de programmation non trouvé, arrêt'); $scenario->stop();
+  $scenario->setLog('scenario de programmation non trouvé, arrêt'); $scenario->stop();
 }	 else
 {
   if ($scProgramme->getIsActive()==0) {
-    log::add('scenario','debug','activation du programmateur'); 
+    $scenario->setLog('activation du programmateur'); 
   	$scProgramme->setIsActive(1); $scProgramme->save();
   }
 }
