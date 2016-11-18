@@ -56,12 +56,15 @@ else {
 	else {
   		// par défaut on remet le mode confort pour une meilleure montée en température avant l'arrivée
   		$szCommuterVers = $szMode;
+      if ($szModeChaudiere ==$szCommuterVers)       // si le mode est déjà réglé, inutile de le renvoyer 
+  		$scenario->setLog( 'le mode est déjà réglé, on ignore la commande');
+      else {
 		$scenario->setLog( 'En période de chauffe, on change le mode vers '.$szCommuterVers);
   		$cmd = cmd::byString('#'.$szNomEquipementChaudiere . '['.$szCommuterVers.']#');
   		$cmd->execCmd($szCommuterVers);
   		$scenario->setLog( 'commutation en mode ' . $szCommuterVers.' envoyée');
         $scenario->setData('ChaudiereProchainCycleHeure','-');
-      $scenario->setData('ChaudiereProchainCycleMode','attente prochain cycle');
-
+        $scenario->setData('ChaudiereProchainCycleMode','attente prochain cycle');
+      } 
 	}
 }
