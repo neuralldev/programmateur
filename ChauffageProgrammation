@@ -106,22 +106,25 @@ if ($szEtatChaudiere == true) { //vérouillée en température de consigne ?
         $scenario->setSchedule(array('0 * * * *', '30 * * * * '));
         $scenario->save();
 
-        if ($bWeekEnd==1) { // on est en week-end, le week-end a l'antériorité sur les jours fériés
-            $scenario->setLog( 'on est en weekend');
-			$dProg = $dProgrammeWeekEnd;
-		} 
-		if ($bEstFerie==0) {
+        if ($bEstFerie==1) { 
             // on est pas un jour férié, si des traitements sont à faire c'est ici
-            $scenario->setLog( 'on est en jour normal');
-			$dProg = $dProgrammeStandard;
-		}   else { // jour férié
             $scenario->setLog( 'on est en jour férié');
 			$dProg = $dProgrammeFeries;
+		} else
+		if ($bWeekEnd==1) {
+			// on est en week-end, le week-end a l'antériorité sur les jours fériés
+            $scenario->setLog( 'on est en weekend');
+			$dProg = $dProgrammeWeekEnd;
+		}   else { // jour standard
+            $scenario->setLog( 'on est en jour standard');
+			$dProg = $dProgrammeStandard;
 		};
 		$szCommuterVers = '';
+		$iTimeset = 0;
 		foreach (array_reverse($dProg) as $szHeure) {
 			$dIntervalle = new DateTime(date('Y-m-d') . ' ' . $szHeure['heure']);
-			$scenario->setLog( 'lecture intervalle heure=' . $szHeure['heure']);
+            $iTimeset = ((date('H') - substr($szHeure['heure'],0,2)) *60) + (date('i')-substr($szHeure['heure'],3,2) );
+            $scenario->setLog( 'delta minute =' . $iTimeset.' avec '.$szHeure['heure']. ' depuis '.date('H:i'));
 			if ($dDateActuelle >= $dIntervalle) { // à la première heure qui va, on sort de la boucle
 				$szCommuterVers = $szHeure['mode'];
 				$scenario->setLog( 'heure trouvé qui correspond =' . $szHeure['heure']);
@@ -129,7 +132,7 @@ if ($szEtatChaudiere == true) { //vérouillée en température de consigne ?
 			}
 		}
 		$scenario->setLog( 'test de la commutation en mode {' . $szCommuterVers . '}');
-		if ($szCommuterVers != '' && $szCommuterVers != $szModeChaudiere) {
+		if (($szCommuterVers != '') && ($szCommuterVers != $szModeChaudiere) && ($iTimeset <=5)) {
 			// on a trouvé une commutation et on doit changer de mode
 			$scenario->setLog( 'commutation en mode ' . $szCommuterVers);
 			$cmd = cmd::byString('#'.$szNomEquipementChaudiere . '['.$szCommuterVers.']#');
