@@ -1,3 +1,4 @@
+//log::add('chauffage','debug', '----------------------- chaudiere : retour de congés ------------------------------');
 $scenario->setLog( '----------------------- chaudiere : retour de congés ------------------------------');
 $szNomEquipementChaudiere = $scenario->getData('ChaudiereThermostat'); // nom de l'équipement Thermostat
 if($szNomEquipementChaudiere=='') {
@@ -65,6 +66,18 @@ else {
   		$scenario->setLog( 'commutation en mode ' . $szCommuterVers.' envoyée');
         $scenario->setData('ChaudiereProchainCycleHeure','-');
         $scenario->setData('ChaudiereProchainCycleMode','attente prochain cycle');
+        // on est en retour de vacances, il faut activer la programmation 
+        $scProgramme = $scenario->byObjectNameGroupNameScenarioName('Aucun','Chauffage','ChauffageProgrammation');
+        if ($scProgramme ==NULL) {
+          log::add('scenario','debug','scenario de programmation non trouvé, on saute'); 
+        }	 else
+        {
+          if ($scProgramme->getIsActive()==0) {
+            log::add('scenario','debug','activation du programmateur'); 
+            $scProgramme->setIsActive(1); $scProgramme->save();
+          }
+}
+
       } 
 	}
 }
