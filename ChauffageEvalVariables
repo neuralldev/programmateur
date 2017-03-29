@@ -21,7 +21,7 @@ if ($szThermostatName=='') {
   if ($szThermostatName=='') { 
     // un nom de thermostat est obligatoire pour le fonctionnement, si on le trouve pas il faut arrêter
     $scenario->Stop();
-    $scenario->setLog('aucun thermostat trouvé, la programmation ne peut être lancée !');    
+    $scenario->setLog( 'aucun thermostat trouvé, la programmation ne peut être lancée !');    
   }
 }
 $scenario->setLog( 'thermostat utilisé '.$szThermostatName);    
@@ -132,31 +132,34 @@ $dProgrammeFeries = array();
 // 'Eco'      : baisse de température de nuit
 // 'Confort'  : température en journée présent
 if ($prgStandard==NULL) {
+  $scenario->setLog( 'init mode standard');
   $dProgrammeStandard = array(
       array("heure" => "06:30", "mode" => "Confort"),
       array("heure" => "08:30", "mode" => "Eco"),
       array("heure" => "18:30", "mode" => "Confort"),
       array("heure" => "22:00", "mode" => "Eco")
   );
+} else $dProgrammeStandard = $prgStandard;
 	$scenario->setData('ChaudiereProgrammeStandard', implode('/', array_map(function($el){ return $el['heure'].','.$el['mode']; }, $dProgrammeStandard)));
-};
   
 if ($prgWeekEnd==NULL) {
+  $scenario->setLog( 'init mode weekend');
   $dProgrammeWeekEnd = array(
       array("heure" => "07:30", "mode" => "Confort"),
       array("heure" => "22:00", "mode" => "Eco")
   );
+} else $dProgrammeWeekEnd  = $prgWeekEnd;
 	$scenario->setData('ChaudiereProgrammeWeekEnd', implode('/', array_map(function($el){ return $el['heure'].','.$el['mode']; }, $dProgrammeWeekEnd)));
   
-};
 
 if ($prgFeries==NULL) {
+  $scenario->setLog( 'init mode jours férié');
   $dProgrammeFeries = array(
       array("heure" => "08:30", "mode" => "Confort"),
       array("heure" => "22:00", "mode" => "Eco")
   );
+} else $dProgrammeFeries  = $prgFeries;
 	$scenario->setData('ChaudiereProgrammeFeries', implode('/', array_map(function($el){ return $el['heure'].','.$el['mode']; }, $dProgrammeFeries)));
-}
 
 $scenario->setLog('programmation : ');
 $scenario->setLog('standard  : '.json_encode($dProgrammeStandard, true));
@@ -181,7 +184,7 @@ if ($szMode == '') // aucun mode programmé, on met une valeur par défaut à Co
 
 // auto programmation, exécution toutes les jours à minuit une pour revoir les flags
 $scenario->setMode("schedule");
-$scenario->setSchedule('1 0 * * *');
+$scenario->setSchedule('15 0 * * *');
 $scenario->save();
 
 // programme maintenant le déclenchement du programmateur correctement, ce dernier en dehors des période de chauffe se désactivera à la première itération
@@ -195,4 +198,3 @@ if ($scList ==NULL) {
   $scList->setSchedule(array('0 * * * *','30 * * * *'));
   $scList->save();
 }
-
