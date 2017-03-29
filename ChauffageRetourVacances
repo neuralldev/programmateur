@@ -1,4 +1,3 @@
-//log::add('chauffage','debug', '----------------------- chaudiere : retour de congés ------------------------------');
 $scenario->setLog( '----------------------- chaudiere : retour de congés ------------------------------');
 $szNomEquipementChaudiere = $scenario->getData('ChaudiereThermostat'); // nom de l'équipement Thermostat
 if($szNomEquipementChaudiere=='') {
